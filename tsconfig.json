@@ -5,16 +5,14 @@
     "moduleResolution": "bundler",
     "declaration": true,
     "declarationDir": "dist",
-    "outDir": "dist",
-    "rootDir": "src",
+    "emitDeclarationOnly": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
     "lib": ["ESNext"],
     "types": ["bun-types"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["index.ts"],
+  "exclude": ["node_modules", "dist", "src"]
 }

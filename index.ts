@@ -1,16 +1,12 @@
-export const SKILL_NAME = "agent-browser"
+import type { Plugin } from "@opencode-ai/plugin"
+import { tool } from "@opencode-ai/plugin"
 
-export interface BuiltinSkill {
-  name: string
-  description: string
-  template: string
-}
+const SKILL_NAME = "agent-browser"
 
-export const agentBrowserSkill: BuiltinSkill = {
-  name: SKILL_NAME,
-  description:
-    "MUST USE for browser automation. Visible browser with persistent cookies, full dev tools (console, network, storage, eval JS). Always use --headed and --json flags.",
-  template: `# Browser Automation with agent-browser
+const skillDescription =
+  "MUST USE for browser automation. Visible browser with persistent cookies, full dev tools (console, network, storage, eval JS). Always use --headed and --json flags."
+
+const skillTemplate = `# Browser Automation with agent-browser
 
 ## HOW IT WORKS
 
@@ -21,20 +17,33 @@ agent-browser maintains its own browser session with cookies.
 
 ## WORKFLOW
 
-### 1. Check & Open
+### 1. Open Browser (MUST use this pattern)
 \`\`\`bash
-agent-browser session list                    # Check existing sessions
-agent-browser open <url> --headed             # Open URL (visible browser)
-agent-browser set viewport 1920 1080          # Set viewport size
+# ALWAYS use this on first open - sets viewport to 1920x1080:
+pkill -f agent-browser; sleep 1; agent-browser open <url> --headed && agent-browser set viewport 1920 1080
+
+# If browser already running, just navigate:
+agent-browser open <url> --headed
 \`\`\`
 
-### 2. Analyze Page
+### 2. Handle Cookie Banner (MUST DO on public sites)
+After opening a page, ALWAYS:
+1. Run \`agent-browser snapshot -i\` to check for cookie consent banner
+2. If cookie banner present: click "Accept" / "Accetta" / "Accept all" button
+3. Unless user explicitly asks to keep it open (for development/debugging)
+
+\`\`\`bash
+agent-browser snapshot -i                     # Look for cookie banner
+agent-browser click @eX                       # Click accept button (use correct @ref)
+\`\`\`
+
+### 3. Analyze Page
 \`\`\`bash
 agent-browser snapshot -i                     # Get interactive elements with @refs
 agent-browser snapshot -i -c                  # Compact output
 \`\`\`
 
-### 3. Interact (use @refs from snapshot)
+### 4. Interact (use @refs from snapshot)
 \`\`\`bash
 agent-browser click @e1                       # Click element
 agent-browser fill @e2 "text"                 # Clear and fill input
@@ -46,7 +55,7 @@ agent-browser hover @e1                       # Hover element
 agent-browser check @e1                       # Check checkbox
 \`\`\`
 
-### 4. Get Information
+### 5. Get Information
 \`\`\`bash
 agent-browser get text @e1                    # Element text
 agent-browser get value @e1                   # Input value
@@ -57,7 +66,7 @@ agent-browser get url                         # Current URL
 agent-browser get box @e1                     # Element bounding box
 \`\`\`
 
-### 5. Navigate
+### 6. Navigate
 \`\`\`bash
 agent-browser open <url>                      # Go to URL (keeps cookies!)
 agent-browser back                            # Go back
@@ -65,14 +74,14 @@ agent-browser forward                         # Go forward
 agent-browser reload                          # Reload page
 \`\`\`
 
-### 6. Wait
+### 7. Wait
 \`\`\`bash
 agent-browser wait @e1                        # Wait for element
 agent-browser wait 2000                       # Wait milliseconds
 agent-browser wait --text "Success"           # Wait for text
 \`\`\`
 
-### 7. Screenshots
+### 8. Screenshots
 \`\`\`bash
 mkdir -p .agent-screenshots
 agent-browser screenshot .agent-screenshots/YYYYMMDD-HHMMSS-description.png
@@ -136,13 +145,14 @@ AGENT_BROWSER_STREAM_PORT=9223 agent-browser open <url> --headed
 
 ## RULES
 
-1. **--headed**: Always use for \`open\` command (user must see browser)
-2. **--json**: Always use for console, errors, cookies, storage, network
-3. **viewport 1920 1080**: Set after opening
-4. **snapshot before interact**: Always get fresh @refs before clicking/filling
-5. **re-snapshot after navigation**: Page changes = new @refs
-6. **screenshots**: Save to \`.agent-screenshots/YYYYMMDD-HHMMSS-description.png\`
-7. **NEVER close session**: \`close\` deletes cookies = re-login required!
+1. **First open**: ALWAYS use the pkill+open+viewport pattern from section 1
+2. **Cookie banner**: ALWAYS dismiss cookie banners on public sites (accept cookies), unless user asks to keep for debugging
+3. **--headed**: Always use for \`open\` command (user must see browser)
+4. **--json**: Always use for console, errors, cookies, storage, network
+5. **snapshot before interact**: Always get fresh @refs before clicking/filling
+6. **re-snapshot after navigation**: Page changes = new @refs
+7. **screenshots**: Save to \`.agent-screenshots/YYYYMMDD-HHMMSS-description.png\`
+8. **NEVER close session**: \`close\` deletes cookies = re-login required!
 
 ## AUTHENTICATION
 
@@ -176,10 +186,66 @@ agent-browser session                         # Current session name
 
 ## TROUBLESHOOTING
 
-Browser not responding:
+**"Browser not launched" error**:
+\`\`\`bash
+pkill -f agent-browser; sleep 1; agent-browser open <url> --headed
+\`\`\`
+
+**Browser not responding**:
 \`\`\`bash
 pkill -f agent-browser                        # Kill daemon (loses cookies!)
 agent-browser open <url> --headed             # Restart fresh (need re-login)
 \`\`\`
-`,
+`
+
+/**
+ * OpenCode plugin for agent-browser automation.
+ *
+ * Provides a skill for browser automation with persistent cookies,
+ * full dev tools access, and video streaming support.
+ *
+ * ## Configuration
+ *
+ * ```json
+ * {
+ *   "plugin": ["opencode-agent-browser"]
+ * }
+ * ```
+ */
+export const OpenCodeAgentBrowser: Plugin = async (ctx) => {
+  return {
+    tool: {
+      load_agent_browser_skill: tool({
+        description: `Load the agent-browser skill for browser automation. Use when tasks involve: screenshots, web scraping, form automation, browser navigation, visual testing, or webpage interaction.`,
+        args: {},
+        async execute(args, toolCtx) {
+          await ctx.client.session.prompt({
+            path: { id: toolCtx.sessionID },
+            body: {
+              noReply: true,
+              parts: [
+                {
+                  type: "text",
+                  text: `# Skill Loaded: ${SKILL_NAME}\n\n${skillTemplate}`,
+                },
+              ],
+            },
+          })
+          return `Skill "${SKILL_NAME}" loaded. Use bash to execute agent-browser commands.`
+        },
+      }),
+    },
+
+    "experimental.chat.system.transform": async (input, output) => {
+      output.system.push(`
+<available-skills>
+## agent-browser
+${skillDescription}
+To use: Call \`load_agent_browser_skill\` tool, then use bash to run agent-browser commands.
+</available-skills>
+`)
+    },
+  }
 }
+
+export default OpenCodeAgentBrowser

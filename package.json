@@ -1,19 +1,26 @@
 {
   "name": "opencode-agent-browser",
   "version": "1.0.0",
-  "description": "OpenCode plugin for agent-browser - headless browser automation for AI agents",
+  "description": "OpenCode plugin for agent-browser - browser automation with persistent cookies and dev tools",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
     "dist"
   ],
+  "scripts": {
+    "build": "bun build index.ts --outdir dist --target node && tsc",
+    "prepublishOnly": "bun run build",
+    "test": "bun test"
+  },
   "keywords": [
     "opencode",
     "opencode-plugin",
@@ -25,25 +32,23 @@
     "web-scraping",
     "screenshots"
   ],
-  "author": "crotti",
+  "author": "Nicola Crotti",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nicola-crotti/opencode-agent-browser"
+    "url": "git+https://github.com/crottolo/opencode-agent-browser.git"
   },
-  "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target bun --format esm && tsc --emitDeclarationOnly",
-    "clean": "rm -rf dist",
-    "prepublishOnly": "bun run clean && bun run build",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+  "bugs": {
+    "url": "https://github.com/crottolo/opencode-agent-browser/issues"
   },
+  "homepage": "https://github.com/crottolo/opencode-agent-browser#readme",
   "peerDependencies": {
-    "@opencode-ai/plugin": ">=1.0.0"
+    "@opencode-ai/plugin": ">=0.15.0",
+    "typescript": ">=5.0.0"
   },
   "devDependencies": {
     "@opencode-ai/plugin": "^1.1.21",
-    "bun-types": "latest",
+    "@types/bun": "latest",
     "typescript": "^5.7.3"
   }
 }
