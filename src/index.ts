@@ -1,18 +1,15 @@
 import type { Plugin } from "@opencode-ai/plugin"
+import { tool } from "@opencode-ai/plugin"
 import { agentBrowserSkill, SKILL_NAME } from "./skills/agent-browser"
 
 export const AgentBrowserPlugin: Plugin = async (ctx) => {
   return {
     // Register skill as invocable tool
     tool: {
-      load_agent_browser_skill: {
+      load_agent_browser_skill: tool({
         description: `Load the agent-browser skill for browser automation. Use when tasks involve: screenshots, web scraping, form automation, browser navigation, visual testing, or webpage interaction. Trigger phrases: screenshot, scrape, browser, webpage, navigate, fill form, test website.`,
-        parameters: {
-          type: "object",
-          properties: {},
-          required: [],
-        },
-        execute: async (args, toolCtx) => {
+        args: {},
+        async execute(args, toolCtx) {
           // Inject skill into context via silent message
           await ctx.client.session.prompt({
             path: { id: toolCtx.sessionID },
@@ -29,7 +26,7 @@ export const AgentBrowserPlugin: Plugin = async (ctx) => {
 
           return `Skill "${SKILL_NAME}" loaded successfully. You now have instructions for browser automation using agent-browser CLI. Use bash to execute agent-browser commands.`
         },
-      },
+      }),
     },
 
     // Inject skill awareness into system prompt
