@@ -1,0 +1,49 @@
+{
+  "name": "opencode-agent-browser",
+  "version": "1.0.0",
+  "description": "OpenCode plugin for agent-browser - headless browser automation for AI agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "agent-browser",
+    "browser-automation",
+    "playwright",
+    "headless",
+    "ai-agents",
+    "web-scraping",
+    "screenshots"
+  ],
+  "author": "crotti",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicola-crotti/opencode-agent-browser"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target bun --format esm && tsc --emitDeclarationOnly",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "bun run clean && bun run build",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.1.21",
+    "bun-types": "latest",
+    "typescript": "^5.7.3"
+  }
+}
