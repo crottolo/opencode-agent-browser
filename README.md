@@ -24,19 +24,15 @@ agent-browser install  # Download Chromium
 
 ### 2. Install this plugin
 
-```bash
-# In your OpenCode config directory
-cd ~/.config/opencode
-npm install opencode-agent-browser
-```
-
-Add to your `opencode.json`:
+Add `opencode-agent-browser` to the `plugins` array in your `opencode.json`:
 
 ```json
 {
-  "plugin": ["opencode-agent-browser"]
+  "plugins": ["opencode-agent-browser"]
 }
 ```
+
+OpenCode resolves the package from npm automatically.
 
 ## Usage Examples
 
@@ -205,7 +201,7 @@ bun run build
 
 # In opencode.json, use local path:
 {
-  "plugin": ["/path/to/opencode-agent-browser"]
+  "plugins": ["/path/to/opencode-agent-browser"]
 }
 ```
 
@@ -279,7 +275,7 @@ The plugin automatically suggests loading the skill when your prompt contains:
 
 ## Requirements
 
-- **OpenCode** >= 1.0.0
+- **OpenCode** >= 2.0.0
 - **agent-browser** CLI installed globally
 - **Chromium** (installed via `agent-browser install`)
 - **macOS/Linux** (Windows support may vary)

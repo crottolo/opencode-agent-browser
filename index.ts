@@ -1,5 +1,4 @@
-import type { Plugin } from "@opencode-ai/plugin"
-import { tool } from "@opencode-ai/plugin"
+import { Plugin } from "@opencode/plugin"
 
 const SKILL_NAME = "agent-browser"
 
@@ -198,54 +197,47 @@ agent-browser open <url> --headed             # Restart fresh (need re-login)
 \`\`\`
 `
 
-/**
- * OpenCode plugin for agent-browser automation.
- *
- * Provides a skill for browser automation with persistent cookies,
- * full dev tools access, and video streaming support.
- *
- * ## Configuration
- *
- * ```json
- * {
- *   "plugin": ["opencode-agent-browser"]
- * }
- * ```
- */
-export const OpenCodeAgentBrowser: Plugin = async (ctx) => {
-  return {
-    tool: {
-      load_agent_browser_skill: tool({
-        description: `Load the agent-browser skill for browser automation. Use when tasks involve: screenshots, web scraping, form automation, browser navigation, visual testing, or webpage interaction.`,
-        args: {},
-        async execute(args, toolCtx) {
-          await ctx.client.session.prompt({
-            path: { id: toolCtx.sessionID },
-            body: {
-              noReply: true,
-              parts: [
-                {
-                  type: "text",
-                  text: `# Skill Loaded: ${SKILL_NAME}\n\n${skillTemplate}`,
-                },
-              ],
-            },
-          })
-          return `Skill "${SKILL_NAME}" loaded. Use bash to execute agent-browser commands.`
+export default Plugin.define({
+  id: "opencode-agent-browser",
+  async setup(ctx) {
+    // Register the skill-loading tool.
+    await ctx.tool.transform((editor) => {
+      editor.add({
+        name: "load_agent_browser_skill",
+        description:
+          "Load the agent-browser skill for browser automation. Use when tasks involve: screenshots, web scraping, form automation, browser navigation, visual testing, or webpage interaction.",
+        input: {
+          type: "object",
+          properties: {},
+          additionalProperties: false,
         },
-      }),
-    },
+        async execute(_input, toolCtx) {
+          // Inject the full skill template into the session as a synthetic
+          // (non-model-triggering) message so it stays in context.
+          await ctx.session.synthetic({
+            sessionID: toolCtx.sessionID,
+            text: `# Skill Loaded: ${SKILL_NAME}\n\n${skillTemplate}`,
+          })
 
-    "experimental.chat.system.transform": async (input, output) => {
-      output.system.push(`
+          return {
+            content: `Skill "${SKILL_NAME}" loaded. Use bash to execute agent-browser commands.`,
+          }
+        },
+      })
+    })
+
+    // Surface the skill in the system prompt so the model knows when to use it.
+    await ctx.session.hook("context", (event) => {
+      event.system.push({
+        type: "text",
+        text: `
 <available-skills>
 ## agent-browser
 ${skillDescription}
 To use: Call \`load_agent_browser_skill\` tool, then use bash to run agent-browser commands.
 </available-skills>
-`)
-    },
-  }
-}
-
-export default OpenCodeAgentBrowser
+`,
+      })
+    })
+  },
+})
