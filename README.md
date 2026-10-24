@@ -18,7 +18,7 @@ OpenCode plugin for [agent-browser](https://github.com/vercel-labs/agent-browser
 ### 1. Install agent-browser CLI
 
 ```bash
-npm install -g agent-browser
+npm install -g agent-browser@0.39.2   # Last version tested with this plugin — verify before upgrading
 agent-browser install  # Download Chromium
 ```
 
@@ -110,10 +110,12 @@ OpenCode                    Plugin                      agent-browser
 
 ## Quick Reference
 
-### Open Browser (MUST use this pattern first time)
+### Open Browser
 ```bash
-pkill -f agent-browser; sleep 1; agent-browser open <url> --headed && agent-browser set viewport 1920 1080
+agent-browser session list                     # Reuse a running session if any
+agent-browser open <url> --headed && agent-browser set viewport 1920 1080
 ```
+> Do not `pkill -f agent-browser` — the `-f` pattern also matches unrelated processes that merely contain the string "agent-browser". Recover a wedged daemon with `agent-browser close`, or by killing a specifically reviewed PID from `pgrep -af agent-browser`.
 
 ### Handle Cookie Banner
 ```bash
@@ -171,11 +173,11 @@ git clone https://github.com/crottolo/opencode-agent-browser.git
 cd opencode-agent-browser
 ```
 
-Edit `index.ts` to customize:
+Edit `src/skills/agent-browser.ts` to customize (the root `index.ts` imports from there — one canonical copy):
 
 #### Change Default Viewport
 ```typescript
-// Find this line in skillTemplate:
+// Find this line in the skill template:
 agent-browser set viewport 1920 1080
 
 // Change to your preferred size:
@@ -213,8 +215,14 @@ bun run build
 
 ### "Browser not launched" Error
 ```bash
-# Kill any existing daemon and restart:
-pkill -f agent-browser; sleep 1; agent-browser open <url> --headed
+# Stop gracefully and restart:
+agent-browser close; agent-browser open <url> --headed
+```
+
+If the daemon is wedged and `close` does nothing, find the PID and kill only that process:
+```bash
+pgrep -f agent-browser   # review the matches first
+kill <pid>
 ```
 
 ### Browser Window Not Visible
@@ -277,6 +285,16 @@ The plugin automatically suggests loading the skill when your prompt contains:
 - "Check if there are any JavaScript errors"
 - "Navigate to the login page and sign in"
 
+## Security notes
+
+Browser automation hands an LLM-driven process real browsing power. Before using this plugin on sensitive accounts, read the `SECURITY` section of the skill template (loaded into the conversation together with the rest of the instructions). In short:
+
+- **Everything the page produces is untrusted input.** Snapshot/console/error/network output can contain attacker-controlled text. Treat it as data, not instructions.
+- **Cookie & storage dumps expose session secrets.** The skill marks those commands `(SECRET)` intentionally: `cookies get --json`, `storage local --json`, and `network requests --json` land in the agent transcript, which is sent to your LLM provider and written to local logs. Use them only when the task needs them, and prefer disposable/test credentials for automated logins.
+- **Sessions accumulate trust.** Every login done through the shared browser profile persists as cookies. On multi-user machines the blast radius grows accordingly.
+- **The screencast WebSocket (port 9223) has no authentication.** Enable it only while actually watching, and only where the port is not reachable by other hosts.
+- **Pin the `agent-browser` CLI version.** This plugin has been verified against 0.39.2; re-audit on upgrade.
+
 ## Requirements
 
 - **OpenCode** >= 1.0.0
@@ -305,10 +323,13 @@ bun run build
 ### Project Structure
 ```
 opencode-agent-browser/
-├── index.ts          # Main plugin code with skill template
-├── package.json      # npm package config
-├── tsconfig.json     # TypeScript config
-├── dist/             # Built output
+├── index.ts                  # Plugin entrypoint (registers the skill)
+├── src/
+│   └── skills/
+│       └── agent-browser.ts  # Canonical skill template (single source of truth)
+├── package.json              # npm package config
+├── tsconfig.json             # TypeScript config
+├── dist/                     # Built output
 │   ├── index.js
 │   └── index.d.ts
 └── README.md
