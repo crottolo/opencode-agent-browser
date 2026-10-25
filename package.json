@@ -1,6 +1,6 @@
 {
   "name": "opencode-agent-browser",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "OpenCode plugin for agent-browser - browser automation with persistent cookies and dev tools",
   "type": "module",
   "main": "./dist/index.js",
@@ -8,16 +8,15 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts --outdir dist --target node && tsc",
+    "build": "bun build index.ts --outdir dist --target node --external @opencode/plugin && tsc",
     "prepublishOnly": "bun run build",
     "test": "bun test"
   },
@@ -43,12 +42,10 @@
   },
   "homepage": "https://github.com/crottolo/opencode-agent-browser#readme",
   "peerDependencies": {
-    "@opencode-ai/plugin": ">=0.15.0",
-    "typescript": ">=5.0.0"
+    "@opencode/plugin": ">=2.0.0"
   },
   "devDependencies": {
-    "@opencode-ai/plugin": "^1.1.21",
-    "@types/bun": "latest",
+    "@opencode/plugin": "^2.0.22",
     "typescript": "^5.7.3"
   }
 }
